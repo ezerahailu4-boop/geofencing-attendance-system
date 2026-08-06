@@ -161,16 +161,32 @@
        velocity:0,
        speed:0,
    }
+    let _lastGeocodeLat = null, _lastGeocodeLng = null, _geocodeTimer = null;
+
     success=(pos)=>{
-        coordinates.lat=pos.coords.latitude;
-        coordinates.lng=pos.coords.longitude;
-        // check employee current location status
-          checkStatus();                    
+        coordinates.lat = pos.coords.latitude;
+        coordinates.lng = pos.coords.longitude;
+        updateDistanceUI();
+        // Only call geocoding API if position moved more than ~10m
+        let moved = _lastGeocodeLat === null ||
+            Math.abs(coordinates.lat - _lastGeocodeLat) > 0.0001 ||
+            Math.abs(coordinates.lng - _lastGeocodeLng) > 0.0001;
+        if (moved) {
+            clearTimeout(_geocodeTimer);
+            _geocodeTimer = setTimeout(fetchAddress, 3000);
+        }
     }
 
     error=(err)=> {
-         console.warn(`ERROR(${err.code}): ${err.message}`);
-        alertify.error(`<span style='color:#fff;font-size:12px;'>ERROR(${err.code}): ${err.message}) Try Again OR Open In Diffrent Browser</span>`);
+        let msg = err.code === 1 ? 'Location permission denied. Please allow location access and reload.'
+                : err.code === 2 ? 'Location unavailable. Check your GPS/network and reload.'
+                : 'Location request timed out. Please reload.';
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('btnText').textContent = 'GPS Error';
+        document.getElementById('statusBadge').textContent = '\u26A0 ' + msg;
+        document.getElementById('statusBadge').className = 'status-badge outside';
+        document.getElementById('address').textContent = msg;
+        alertify.error("<span style='color:#fff;font-size:12px;'>" + msg + "</span>");
     }
 
     var options = {
@@ -179,8 +195,15 @@
     };
 
 // watch user position
-    getCurrentPositions=()=>{                
-        let watchId=navigator.geolocation.watchPosition(success,error,options);
+    getCurrentPositions=()=>{
+        if (!navigator.geolocation) {
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('btnText').textContent = 'Not Supported';
+            document.getElementById('statusBadge').textContent = '\u26A0 Your browser does not support geolocation.';
+            document.getElementById('statusBadge').className = 'status-badge outside';
+            return;
+        }
+        navigator.geolocation.watchPosition(success, error, options);
     }
     getCurrentPositions();
     // getCurrentPosition    
@@ -211,6 +234,20 @@
                             <span style="margin-left:auto;font-size:13px;opacity:0.8;"><?php echo date("l, d M Y"); ?></span>
                         </div>
 
+                        <?php
+                        $shift = getShiftSettings();
+                        $shiftDisplay = date('h:i A', strtotime($shift['shift_start']));
+                        if (isLateCheckIn() && checkStatus($_SESSION['emp_id']) == 0):
+                        ?>
+                        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+                            <i class="fa fa-clock-o" style="color:#e67e22;font-size:20px;"></i>
+                            <div>
+                                <strong style="color:#856404;">Late Check-In</strong>
+                                <div style="font-size:12px;color:#856404;">Shift started at <?php echo $shiftDisplay; ?> (grace: <?php echo $shift['grace_minutes']; ?> min). Your check-in will be marked as late.</div>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
                         <!-- info grid -->
                         <div class="att-info-grid">
                             <div class="att-info-item">
@@ -227,7 +264,7 @@
                             </div>
                             <div class="att-info-item">
                                 <label>Distance Limit</label>
-                                <span><?php getDistanceLimit($_SESSION["emp_id"]); ?> m</span>
+                                <span><?php echo getDistanceLimit($_SESSION["emp_id"]); ?> m</span>
                             </div>
                         </div>
 
@@ -307,34 +344,36 @@
     }
     setInterval(getTime, 1000);
 
-    function checkStatus(){
-        let storeLat = <?php echo getAssignedLocationLat($_SESSION["emp_id"]);?>;
-        let storeLng = <?php echo getAssignedLocationLng($_SESSION["emp_id"]);?>;
+    const storeLat = <?php echo getAssignedLocationLat($_SESSION["emp_id"]);?>;
+    const storeLng = <?php echo getAssignedLocationLng($_SESSION["emp_id"]);?>;
+    const distLimit = <?php echo intval(getDistanceLimit($_SESSION['emp_id'])); ?>;
+    const empStatus = <?php echo checkStatus($_SESSION["emp_id"]); ?>;
+
+    function fetchAddress(){
+        _lastGeocodeLat = coordinates.lat;
+        _lastGeocodeLng = coordinates.lng;
+        let myApi = "https://maps.googleapis.com/maps/api/geocode/json?latlng="+coordinates.lat+","+coordinates.lng+"&key=AIzaSyClbbki1DYIOxc8KN-WULeJFaqf-ESHkkY";
+        $.ajax({ url: myApi, success: function(data){
+            if(data.results && data.results.length > 0){
+                coordinates.address = data.results[0].formatted_address;
+            } else {
+                coordinates.address = "<?php echo addslashes(getAssignedLocation($_SESSION["emp_id"])); ?>";
+            }
+            $("#address").text(coordinates.address);
+        }});
+    }
+
+    function updateDistanceUI(){
         let distance = findDistance(storeLat, storeLng, coordinates.lat, coordinates.lng, "M");
         coordinates.distance = distance;
         $("#distance").text(distance + " m");
         $("#lat").text(coordinates.lat);
         $("#lng").text(coordinates.lng);
 
-        let myApi = "https://maps.googleapis.com/maps/api/geocode/json?latlng="+coordinates.lat+","+coordinates.lng+"&key=AIzaSyClbbki1DYIOxc8KN-WULeJFaqf-ESHkkY";
-        $.ajax({ url: myApi, success: function(data){
-            if(data.results && data.results.length > 1){
-                coordinates.address = data.results[0].formatted_address;
-                $("#address").text(coordinates.address);
-            } else {
-                let addr = "<?php echo addslashes(getAssignedLocation($_SESSION["emp_id"])); ?>";
-                $("#address").text(addr);
-                coordinates.address = addr;
-            }
-        }});
-
-        let limit = <?php getDistanceLimit($_SESSION['emp_id']); ?>;
-        let status = <?php echo checkStatus($_SESSION["emp_id"]); ?>;
-
-        if(distance <= limit){
+        if(distance <= distLimit){
             $("#submitBtn").prop("disabled", false);
             $("#statusBadge").text("\u2705 You are inside the geofence ("+Math.round(distance)+" m away)").removeClass("outside").addClass("inside");
-            if(status == 0){
+            if(empStatus == 0){
                 currentAction = 'checkin';
                 $("#submitBtn").removeClass("checkout");
                 $("#btnText").text("Check In");
@@ -354,20 +393,34 @@
             $("#btnText").text("Out of Range");
         }
     }
-    setInterval(checkStatus, 2000);
 
     function takeAction(){
         let userId = <?php echo $_SESSION["emp_id"]; ?>;
         if(currentAction === 'checkin'){
-            $.post("./checkInEntry.php", {userId:userId, userLat:coordinates.lat, userLng:coordinates.lng, address:coordinates.address, distance:coordinates.distance}, function(){
+            $("#submitBtn").prop('disabled', true).find('#btnText').text('Submitting...');
+            $.post("./checkInEntry.php", {userId:userId, userLat:coordinates.lat, userLng:coordinates.lng, address:coordinates.address, distance:coordinates.distance}, function(resp){
                 let html = "<center><i class='fa fa-check-circle' style='color:#00b894;font-size:80px;'></i></center>";
-                alertify.alert('Checked In!', html + '<p style="text-align:center;margin-top:10px;">Attendance recorded successfully</p>', function(){ window.location.reload(); });
+                let msg = resp === 'Late'
+                    ? '<p style="text-align:center;margin-top:10px;color:#e67e22;"><i class="fa fa-clock-o"></i> Checked in — marked as <strong>Late</strong></p>'
+                    : '<p style="text-align:center;margin-top:10px;">Attendance recorded successfully</p>';
+                alertify.alert('Checked In!', html + msg, function(){ window.location.reload(); });
             });
         } else {
             let lastId = <?php echo getLastInsertCheckInId($_SESSION["emp_id"]); ?>;
-            $.post("./checkOutEntry.php", {userId:userId, userLat:coordinates.lat, userLng:coordinates.lng, address:coordinates.address, lastInsertCheckInId:lastId, distance:coordinates.distance}, function(){
+            $("#submitBtn").prop('disabled', true).find('#btnText').text('Submitting...');
+            $.post("./checkOutEntry.php", {userId:userId, userLat:coordinates.lat, userLng:coordinates.lng, address:coordinates.address, lastInsertCheckInId:lastId, distance:coordinates.distance}, function(resp){
+                let data = {};
+                try { data = JSON.parse(resp); } catch(e) {}
                 let html = "<center><i class='fa fa-check-circle' style='color:#d63031;font-size:80px;'></i></center>";
-                alertify.alert('Checked Out!', html + '<p style="text-align:center;margin-top:10px;">See you tomorrow!</p>', function(){ window.location.reload(); });
+                let summary = '<p style="text-align:center;margin-top:10px;">See you tomorrow!</p>';
+                if (data.hours) {
+                    summary = '<p style="text-align:center;margin-top:10px;">Hours worked: <strong>' + data.hours + ' hrs</strong>';
+                    if (data.overtime > 0) {
+                        summary += ' &nbsp;<span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:4px;font-size:12px;"><i class="fa fa-clock-o"></i> Overtime: ' + data.overtime + ' hrs</span>';
+                    }
+                    summary += '</p>';
+                }
+                alertify.alert('Checked Out!', html + summary, function(){ window.location.reload(); });
             });
         }
     }

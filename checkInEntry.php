@@ -49,6 +49,12 @@ if ($dup->get_result()->fetch_assoc()) {
     exit;
 }
 
-$stmt = $conn->prepare("INSERT INTO checkin(userId, lat, longi, address, distance) VALUES(?, ?, ?, ?, ?)");
-$stmt->bind_param("issss", $userId, $userLat, $userLng, $address, $distance);
-echo $stmt->execute() ? "Success" : "error";
+// 4. Determine if late
+include "functions.php";
+$shift = getShiftSettings();
+$deadline = strtotime(date('Y-m-d') . ' ' . $shift['shift_start']) + ($shift['grace_minutes'] * 60);
+$isLate = (time() > $deadline) ? 1 : 0;
+
+$stmt = $conn->prepare("INSERT INTO checkin(userId, lat, longi, address, distance, is_late) VALUES(?, ?, ?, ?, ?, ?)");
+$stmt->bind_param("issssi", $userId, $userLat, $userLng, $address, $distance, $isLate);
+echo $stmt->execute() ? ($isLate ? "Late" : "Success") : "error";

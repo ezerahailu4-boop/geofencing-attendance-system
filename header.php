@@ -55,6 +55,10 @@
                     <li>
                          <a href="./messages.php" accesskey="M"><span class="fa fa-envelope"></span> <span class="xn-text"> Messages</span></a>
                     </li>
+
+                    <li>
+                         <a href="./leaveRequests.php" accesskey="V"><span class="fa fa-calendar-check-o"></span> <span class="xn-text">Leave Requests</span></a>
+                    </li>
                                                               
                     
                     <li>

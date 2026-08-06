@@ -70,6 +70,10 @@
                     <li>
                          <a href="./messages.php" accesskey="M"><span class="fa fa-envelope"></span> <span class="xn-text"> Messages</span></a>
                     </li>
+
+                    <li>
+                         <a href="./leaveManagement.php" accesskey="V"><span class="fa fa-calendar-check-o"></span> <span class="xn-text">Leave Management</span></a>
+                    </li>
                     
                     <li class="xn-openable">
                         <a href="#"><span class="fa fa-archive"></span> <span class="xn-text">Archive</span></a>
@@ -86,6 +90,7 @@
                         <a href="#"><span class="fa fa-cogs"></span> <span class="xn-text">Settings</span></a>
                         <ul>
                             <li><a href="./theme.php" accesskey="T"><span class="fa fa-dashboard"></span> Themes</a></li>
+                            <li><a href="./shiftSettings.php" accesskey="F"><span class="fa fa-clock-o"></span> Shift Settings</a></li>
                             <li class="xn-openable">
                                 <a href="#"><span class="fa fa-user"></span> Profile</a>
                                 <ul>

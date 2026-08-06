@@ -152,7 +152,8 @@
        $("#lat").text("Lat: "+coordinates.lat);
        $("#lng").text("Lng: "+coordinates.lng);
        //alert("Distance: "+distance+" Meter");
-       if(distance<=100){
+       let distLimit = <?php echo intval(getDistanceLimit($_SESSION["emp_id"])); ?>;
+       if(distance<=distLimit){
             console.log("Inside In Approx. 100 meter");
             document.getElementById("options").disabled=false;
             document.getElementById("optionValue").text="Check-in";

@@ -50,4 +50,21 @@ if (!$verify->get_result()->fetch_assoc()) {
 
 $stmt = $conn->prepare("INSERT INTO checkout(userId, lat, longi, address, check_in_id, distance) VALUES(?, ?, ?, ?, ?, ?)");
 $stmt->bind_param("isssis", $userId, $userLat, $userLng, $address, $lastInsertCheckInId, $distance);
-echo $stmt->execute() ? "Success Checkout" : "error Check out";
+if (!$stmt->execute()) {
+    echo "error Check out";
+    exit;
+}
+
+// Calculate hours worked for overtime feedback
+$ci = $conn->prepare("SELECT time FROM checkin WHERE id = ?");
+$ci->bind_param("i", $lastInsertCheckInId);
+$ci->execute();
+$ciRow = $ci->get_result()->fetch_assoc();
+$hoursWorked = $ciRow ? round((time() - strtotime($ciRow['time'])) / 3600, 2) : 0;
+
+include "functions.php";
+$shift = getShiftSettings();
+// Standard shift = 8 hours
+$overtime = max(0, round($hoursWorked - 8, 2));
+
+echo json_encode(['status' => 'success', 'hours' => $hoursWorked, 'overtime' => $overtime]);

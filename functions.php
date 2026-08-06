@@ -384,4 +384,21 @@ function getAssignedLocation($emp_id)
     }
     return "Not Assigned";
 }
+
+function getShiftSettings()
+{
+    include "./db.php";
+    $result = $conn->query("SELECT shift_start, grace_minutes FROM shift_settings WHERE id=1");
+    if ($row = $result->fetch_assoc()) {
+        return $row;
+    }
+    return ['shift_start' => '09:00:00', 'grace_minutes' => 10];
+}
+
+function isLateCheckIn()
+{
+    $shift = getShiftSettings();
+    $deadline = strtotime(date('Y-m-d') . ' ' . $shift['shift_start']) + ($shift['grace_minutes'] * 60);
+    return time() > $deadline;
+}
 ?>
