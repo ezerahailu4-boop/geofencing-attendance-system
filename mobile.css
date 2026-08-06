@@ -1,0 +1,190 @@
+/* =============================================
+   MOBILE RESPONSIVE - Geo Attendance System
+   ============================================= */
+
+/* Base font & box sizing */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* ---- SIDEBAR ---- */
+@media (max-width: 768px) {
+
+    /* collapse sidebar by default on mobile */
+    .page-sidebar {
+        width: 60px !important;
+        overflow: hidden;
+    }
+
+    .page-sidebar .xn-text {
+        display: none !important;
+    }
+
+    .page-sidebar .xn-profile .profile {
+        display: none !important;
+    }
+
+    .page-sidebar li a {
+        padding: 12px 18px !important;
+        font-size: 18px !important;
+    }
+
+    /* push content full width */
+    .page-content {
+        margin-left: 60px !important;
+    }
+
+    /* breadcrumb smaller */
+    .breadcrumb {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+
+    /* page content padding */
+    .page-content-wrap {
+        padding: 10px !important;
+    }
+
+    /* ---- WIDGETS on dashboard ---- */
+    .row .col-md-3 {
+        width: 50% !important;
+        float: left;
+        padding: 4px !important;
+    }
+
+    .widget {
+        margin-bottom: 8px !important;
+    }
+
+    .widget-big-int {
+        font-size: 24px !important;
+    }
+
+    /* ---- ATTENDANCE MARK PAGE ---- */
+    .att-info-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .att-card {
+        padding: 16px !important;
+    }
+
+    #submitBtn {
+        width: 150px !important;
+        height: 150px !important;
+    }
+
+    #submitBtn i {
+        font-size: 28px !important;
+    }
+
+    .time-row {
+        flex-direction: column;
+    }
+
+    .location-table-wrap table {
+        font-size: 11px !important;
+    }
+
+    .location-table-wrap th,
+    .location-table-wrap td {
+        padding: 4px 6px !important;
+    }
+
+    /* ---- TABLES ---- */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table.table {
+        font-size: 12px !important;
+        min-width: 500px;
+    }
+
+    /* ---- FORMS ---- */
+    .form-control {
+        font-size: 14px !important;
+        height: 42px !important;
+    }
+
+    /* ---- HEADER top bar ---- */
+    .x-navigation-horizontal {
+        padding: 0 8px !important;
+    }
+
+    /* ---- MESSAGES panel ---- */
+    .xn-drop-left {
+        right: 0 !important;
+        left: auto !important;
+        width: 280px !important;
+    }
+
+    /* ---- container full width ---- */
+    .container {
+        width: 100% !important;
+        padding: 0 8px !important;
+    }
+}
+
+/* Extra small phones */
+@media (max-width: 480px) {
+
+    .row .col-md-3 {
+        width: 100% !important;
+        float: none;
+    }
+
+    .att-info-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    #submitBtn {
+        width: 130px !important;
+        height: 130px !important;
+        font-size: 13px !important;
+    }
+
+    .att-header h3 {
+        font-size: 15px !important;
+    }
+
+    .att-header span {
+        display: none;
+    }
+
+    /* stack form buttons */
+    .btns {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btns button {
+        width: 160px !important;
+    }
+
+    /* hide map on very small screens to save space */
+    #map {
+        height: 200px !important;
+    }
+}
+
+/* ---- Touch-friendly tap targets ---- */
+@media (max-width: 768px) {
+    a, button {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .page-sidebar li a {
+        min-height: 48px !important;
+    }
+
+    /* larger close/logout buttons */
+    .mb-footer .btn {
+        padding: 10px 20px !important;
+        font-size: 15px !important;
+    }
+}
